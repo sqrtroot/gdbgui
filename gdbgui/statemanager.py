@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 
 from pygdbmi.gdbcontroller import GdbController  # type: ignore
 
+from .pty import Pty
+
 REQUIRED_GDB_FLAGS = ["--interpreter=mi2"]
 logger = logging.getLogger(__name__)
 
@@ -13,6 +15,10 @@ logger = logging.getLogger(__name__)
 class StateManager(object):
     def __init__(self, config: Dict[str, Any]):
         self.controller_to_client_ids: Dict[GdbController, List[str]] = defaultdict(
+            list
+        )  # key is controller, val is list of client ids
+
+        self.pty_to_client_ids: Dict[Pty, List[str]] = defaultdict(
             list
         )  # key is controller, val is list of client ids
         self.gdb_reader_thread = None
@@ -57,6 +63,14 @@ class StateManager(object):
                 rr=self.config["rr"],
             )
             self.controller_to_client_ids[controller].append(client_id)
+
+            pty_command = (
+                [self.config["gdb_path"]]
+                + deepcopy(self.config["initial_binary_and_args"])
+                + deepcopy(self.config["gdb_args"])
+            )
+            pty = Pty(pty_command)
+            self.pty_to_client_ids[pty].append(client_id)
 
             pid = self.get_pid_from_controller(controller)
             if pid is None:
