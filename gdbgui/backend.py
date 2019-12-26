@@ -70,7 +70,7 @@ DEFAULT_GDB_EXECUTABLE = "gdb"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
-logging.basicConfig(format='(%(asctime)s) %(msg)s')
+logging.basicConfig(format="(%(asctime)s) %(msg)s")
 
 
 class ColorFormatter(logging.Formatter):
@@ -708,8 +708,8 @@ def read_file():
 
         else:
             highlight = (
-                True
-            )  # highlight argument was invalid for some reason, default to true
+                True  # highlight argument was invalid for some reason, default to true
+            )
 
     if path and os.path.isfile(path):
         try:

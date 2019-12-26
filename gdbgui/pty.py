@@ -13,7 +13,7 @@ import logging
 class Pty:
     max_read_bytes = 1024 * 20
 
-    def __init__(self, command: Optional[List[str]]=None):
+    def __init__(self, command: Optional[List[str]] = None):
         self.command = command
         if command:
             (child_pid, child_pty_fd) = pty.fork()

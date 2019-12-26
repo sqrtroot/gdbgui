@@ -1,15 +1,13 @@
 import logging
 import traceback
 from collections import defaultdict
-from copy import deepcopy
 from typing import Any, Dict, List, Optional
-
 from pygdbmi.gdbfiledescriptorcontroller import GdbFileDescriptorController
-
 from .pty import Pty
+import copy
 
-REQUIRED_GDB_FLAGS = ["--interpreter=mi2"]
 logger = logging.getLogger(__name__)
+GDB_MI_FLAG = ["--interpreter=mi2"]
 
 
 class StateManager(object):
@@ -25,6 +23,16 @@ class StateManager(object):
         )  # key is controller, val is list of client ids
         self.gdb_reader_thread = None
         self.config = config
+
+    def get_gdb_args(self):
+        gdb_args = copy.copy(GDB_MI_FLAG)
+        if self.config["gdb_args"]:
+            gdb_args += self.config["gdb_args"]
+
+        if self.config["initial_binary_and_args"]:
+            gdb_args += ["--args"]
+            gdb_args += self.config["initial_binary_and_args"]
+        return gdb_args
 
     def connect_client(self, client_id: str, desired_gdbpid: int) -> Dict[str, Any]:
         message = ""
@@ -52,11 +60,7 @@ class StateManager(object):
         if self.get_controller_from_client_id(client_id) is None:
             logger.info("new sid", client_id)
 
-            gdb_args = (
-                deepcopy(self.config["initial_binary_and_args"])
-                + deepcopy(self.config["gdb_args"])
-                + REQUIRED_GDB_FLAGS
-            )
+            gdb_args = self.get_gdb_args()
 
             # first create a pty that accepts mi commands and responds with
             # mi responses
@@ -70,14 +74,13 @@ class StateManager(object):
             # pty is written to when clicking buttons on the webpage.
             pty_command = (
                 [self.config["gdb_path"]]
-                + deepcopy(self.config["initial_binary_and_args"])
-                + deepcopy(self.config["gdb_args"])
+                + copy.copy(self.config["initial_binary_and_args"])
+                + copy.copy(self.config["gdb_args"])
                 + ["-ex", f"new-ui mi2 {pty_mi.name}"]
             )
 
             pty = Pty(pty_command)
             self.pty_to_client_ids[pty].append(client_id)
-
 
         return {
             "pid": pid,
