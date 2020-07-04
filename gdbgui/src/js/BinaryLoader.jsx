@@ -23,7 +23,8 @@ class BinaryLoader extends React.Component {
       past_binaries: [],
       user_input: props.initial_user_input.join(" "),
       initial_set_target_app: props.initial_user_input.length, // if user supplied initial binary, load it immediately
-      target_type: TARGET_TYPES.file
+      target_type: TARGET_TYPES.file,
+      extra_options: {}
     };
     try {
       this.state.past_binaries = _.uniq(
@@ -38,7 +39,7 @@ class BinaryLoader extends React.Component {
     }
   }
   render() {
-    let button_text, title, placeholder;
+    let button_text, title, placeholder, extra_options;
 
     if (this.state.target_type === TARGET_TYPES.file) {
       button_text = "Load Binary";
@@ -51,12 +52,45 @@ class BinaryLoader extends React.Component {
       button_text = "Connect to gdbserver";
       title = "Connect GDB to the remote target.";
       placeholder = "examples: 127.0.0.1:9999 | /dev/ttya";
+      extra_options = (
+        <li className="checkbox">
+          <label style={{ verticalAlign: "center" }}>
+            <input
+              type="checkbox"
+              checked={this.state.extra_options["extended_remote"]}
+              onChange={e => {
+                this.setState({
+                  extra_options: { extended_remote: e.target.checked }
+                });
+              }}
+            />
+            extended-remote
+          </label>
+        </li>
+      );
     } else if (this.state.target_type === TARGET_TYPES.process) {
       // -target-attach
       button_text = "Attach to Process";
       title =
         "Attach to a process pid or a file file outside of GDB, or a thread group gid. If attaching to a thread group, the id previously returned by ‘-list-thread-groups --available’ must be used. Note: to do this, you usually need to run gdbgui as sudo.";
       placeholder = "pid | gid | file";
+    }
+
+    let extra_dropdown;
+    if (extra_options) {
+      extra_dropdown = (
+        <span className="dropdown">
+          <button className="btn dropdown-toggle" type="button" data-toggle="dropdown">
+            <span className="caret" />
+          </button>
+          <ul className="dropdown-menu" style={{ padding: ".5rem" }}>
+            <li className="dropdown-header">
+              Extra settings for {this.state.target_type} target
+            </li>
+            {extra_options}
+          </ul>
+        </span>
+      );
     }
 
     return (
@@ -75,7 +109,9 @@ class BinaryLoader extends React.Component {
               <li>
                 <a
                   className="pointer"
-                  onClick={() => this.setState({ target_type: TARGET_TYPES.file })}
+                  onClick={() =>
+                    this.setState({ target_type: TARGET_TYPES.file, extra_options: {} })
+                  }
                 >
                   Load Binary
                 </a>
@@ -83,7 +119,12 @@ class BinaryLoader extends React.Component {
               <li>
                 <a
                   className="pointer"
-                  onClick={() => this.setState({ target_type: TARGET_TYPES.server })}
+                  onClick={() =>
+                    this.setState({
+                      target_type: TARGET_TYPES.server,
+                      extra_options: { extended_remote: false }
+                    })
+                  }
                 >
                   Connect to gdbserver
                 </a>
@@ -91,7 +132,12 @@ class BinaryLoader extends React.Component {
               <li>
                 <a
                   className="pointer"
-                  onClick={() => this.setState({ target_type: TARGET_TYPES.process })}
+                  onClick={() =>
+                    this.setState({
+                      target_type: TARGET_TYPES.process,
+                      extra_options: {}
+                    })
+                  }
                 >
                   Attach to Process
                 </a>
@@ -106,6 +152,7 @@ class BinaryLoader extends React.Component {
             >
               {button_text}
             </button>
+            {extra_dropdown}
           </div>
 
           <input
@@ -231,7 +278,7 @@ class BinaryLoader extends React.Component {
       const { binary, args } = this._parse_binary_and_args_from_user_input(user_input);
       Actions.set_gdb_binary_and_arguments(binary, args);
     } else if (this.state.target_type === TARGET_TYPES.server) {
-      Actions.connect_to_gdbserver(user_input);
+      Actions.connect_to_gdbserver(user_input, this.state.extra_options);
     } else if (this.state.target_type === TARGET_TYPES.process) {
       Actions.attach_to_process(user_input);
     }

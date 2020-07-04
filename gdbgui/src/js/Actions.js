@@ -135,13 +135,17 @@ const Actions = {
     GdbApi.run_gdb_command(cmds);
     GdbApi.get_inferior_binary_last_modified_unix_sec(binary);
   },
-  connect_to_gdbserver(user_input) {
+  connect_to_gdbserver(user_input, extra_options) {
     // https://sourceware.org/gdb/onlinedocs/gdb/GDB_002fMI-Target-Manipulation.html#GDB_002fMI-Target-Manipulation
     store.set("source_file_paths", []);
     store.set("language", "c_family");
     store.set("inferior_binary_path", null);
     Actions.inferior_program_exited();
-    GdbApi.run_gdb_command([`-target-select remote ${user_input}`]);
+    GdbApi.run_gdb_command([
+      `-target-select ${
+        extra_options.extended_remote ? "extended-remote" : "remote"
+      } ${user_input}`
+    ]);
   },
   remote_connected() {
     Actions.inferior_program_paused();
